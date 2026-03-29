@@ -71,7 +71,7 @@ fun MainView(
 
                 Spacer(Modifier.height(24.dp))
 
-                EyeOfSauronBadge(size = 72, eyeSize = 32)
+                EyeOfSauronBadge(size = 72.dp)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "Der Ring muss zerstört werden",

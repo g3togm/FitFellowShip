@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,14 +16,17 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.activity.viewModels
 import com.example.fellowshiprunner.controller.FellowshipController
 import com.example.fellowshiprunner.model.characters.fellowshipMembers
 import com.example.fellowshiprunner.view.ActivityLogView
@@ -97,23 +103,65 @@ fun TopBarActions() {
                 .background(Color.DarkGray.copy(alpha = 0.4f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Settings, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
 
+// ── Eye of Sauron ─────────────────────────────────────────────────────────────
+
 @Composable
-fun EyeOfSauronBadge(size: Int = 64, eyeSize: Int = 28) {
-    Box(
-        modifier = Modifier
-            .size(size.dp)
-            .background(
-                Brush.radialGradient(listOf(Color(0xFFCC2200), Color(0xFF661100))),
-                CircleShape
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("👁️", fontSize = eyeSize.sp)
+fun EyeOfSauronBadge(size: Dp = 90.dp, eyeSize: Int = 28) {
+    val infiniteTransition = rememberInfiniteTransition(label = "eye")
+
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scale"
+    )
+
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = -4f,
+        targetValue = 4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "rotation"
+    )
+
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    Box(contentAlignment = Alignment.Center) {
+        Image(
+            painter = painterResource(R.drawable.eye),
+            contentDescription = "Eye of Sauron",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .size(size)
+                .scale(scale)
+                .graphicsLayer {
+                    rotationZ = rotation
+                    this.alpha = alpha
+                }
+        )
     }
 }
 

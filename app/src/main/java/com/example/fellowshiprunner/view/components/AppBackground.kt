@@ -16,6 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 
+// fuer vulkan-background
+import com.example.fellowshiprunner.R
+
 /**
  * Full-screen dark background.
  *
@@ -27,7 +30,6 @@ import androidx.compose.ui.res.painterResource
  */
 @Composable
 fun AppBackground(
-    @DrawableRes imageRes: Int? = null,
     gradientHeightFraction: Float = 0.45f,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -36,31 +38,19 @@ fun AppBackground(
             .fillMaxSize()
             .background(Color(0xFF0A0705))
     ) {
-        if (imageRes != null) {
-            Image(
-                painter = painterResource(imageRes),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                alpha = 0.65f
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(gradientHeightFraction)
-                    .align(Alignment.TopCenter)
-                    .background(volcanoGradient)
-            )
-        }
+        Image(
+            painter = painterResource(R.drawable.mordor),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            alpha = 0.55f
+        )
+        // Dark overlay so text stays readable
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF0A0705).copy(alpha = 0.65f))
+        )
         content()
     }
 }
-
-private val volcanoGradient = Brush.radialGradient(
-    colors = listOf(
-        Color(0xFF6B2010).copy(alpha = 0.75f),
-        Color(0xFF3A1008).copy(alpha = 0.45f),
-        Color.Transparent
-    )
-)
