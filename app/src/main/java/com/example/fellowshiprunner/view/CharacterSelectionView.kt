@@ -27,6 +27,7 @@ import com.example.fellowshiprunner.EyeOfSauronBadge
 import com.example.fellowshiprunner.TopBarActions
 import com.example.fellowshiprunner.model.characters.CharacterData
 import com.example.fellowshiprunner.model.characters.fellowshipMembers
+import com.example.fellowshiprunner.rememberSoundManager
 import com.example.fellowshiprunner.view.components.AppBackground
 import com.example.fellowshiprunner.view.components.CharacterPortrait
 import com.example.fellowshiprunner.ui.theme.Gold
@@ -36,6 +37,12 @@ import com.example.fellowshiprunner.ui.theme.TextSecondary
 fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
     var selectedIndex by remember { mutableStateOf(0) }
     val selected = fellowshipMembers[selectedIndex]
+    val sound = rememberSoundManager()
+
+    // Start ambient music when screen opens
+    LaunchedEffect(Unit) {
+        sound.startAmbient(volume = 0.2f)
+    }
 
     AppBackground(gradientHeightFraction = 0.55f) {
         Scaffold(
@@ -51,7 +58,8 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
             ) {
                 TopBarActions()
 
-                EyeOfSauronBadge()
+                // Animated eye — safe on character select screen
+                EyeOfSauronBadge(threatLevel = 0f)
 
                 Spacer(Modifier.height(12.dp))
 
@@ -81,7 +89,11 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
                         CharacterCarouselCard(
                             character = character,
                             isSelected = index == selectedIndex,
-                            onClick = { selectedIndex = index }
+                            onClick = {
+                                selectedIndex = index
+                                // 🔊 Play voiceline when tapping a character
+                                sound.playVoiceline(character.name.lowercase())
+                            }
                         )
                     }
                 }
