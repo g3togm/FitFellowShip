@@ -4,14 +4,34 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -27,15 +47,27 @@ import com.example.fellowshiprunner.EyeOfSauronBadge
 import com.example.fellowshiprunner.TopBarActions
 import com.example.fellowshiprunner.model.characters.CharacterData
 import com.example.fellowshiprunner.model.characters.fellowshipMembers
-import com.example.fellowshiprunner.view.components.AppBackground
-import com.example.fellowshiprunner.view.components.CharacterPortrait
+import com.example.fellowshiprunner.rememberSoundManager
 import com.example.fellowshiprunner.ui.theme.Gold
 import com.example.fellowshiprunner.ui.theme.TextSecondary
+import com.example.fellowshiprunner.view.components.AppBackground
+import com.example.fellowshiprunner.view.components.CharacterPortrait
+import kotlinx.coroutines.delay
 
 @Composable
 fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
     var selectedIndex by remember { mutableStateOf(0) }
-    val selected = fellowshipMembers[selectedIndex]
+    var clickLocked by remember { mutableStateOf(false) }
+
+    val selected = fellowshipMembers.getOrElse(selectedIndex) { fellowshipMembers[0] }
+    val sound = rememberSoundManager()
+
+    LaunchedEffect(clickLocked) {
+        if (clickLocked) {
+            delay(250)
+            clickLocked = false
+        }
+    }
 
     AppBackground(gradientHeightFraction = 0.55f) {
         Scaffold(
@@ -51,21 +83,23 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
             ) {
                 TopBarActions()
 
-                EyeOfSauronBadge()
+                EyeOfSauronBadge(threatLevel = 0f)
 
                 Spacer(Modifier.height(12.dp))
 
                 Text(
-                    "THE FELLOWSHIP\nOF FITNESS",
+                    text = "THE FELLOWSHIP\nOF FITNESS",
                     color = Gold,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Light,
                     textAlign = TextAlign.Center,
                     lineHeight = 30.sp
                 )
+
                 Spacer(Modifier.height(4.dp))
+
                 Text(
-                    "WÄHLE DEINEN GEFÄHRTEN",
+                    text = "WÄHLE DEINEN GEFÄHRTEN",
                     color = TextSecondary,
                     fontSize = 10.sp,
                     letterSpacing = 2.sp
@@ -81,7 +115,14 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
                         CharacterCarouselCard(
                             character = character,
                             isSelected = index == selectedIndex,
-                            onClick = { selectedIndex = index }
+                            onClick = {
+                                if (clickLocked) return@CharacterCarouselCard
+                                if (index == selectedIndex) return@CharacterCarouselCard
+
+                                clickLocked = true
+                                selectedIndex = index
+                                sound.playVoiceline(character.name.lowercase())
+                            }
                         )
                     }
                 }
@@ -90,7 +131,11 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
 
                 CharacterDetailPanel(
                     character = selected,
-                    onSelect = { onCharacterSelected(selectedIndex) }
+                    onSelect = {
+                        if (selectedIndex in fellowshipMembers.indices) {
+                            onCharacterSelected(selectedIndex)
+                        }
+                    }
                 )
 
                 Spacer(Modifier.height(24.dp))
@@ -100,7 +145,11 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun CharacterCarouselCard(character: CharacterData, isSelected: Boolean, onClick: () -> Unit) {
+fun CharacterCarouselCard(
+    character: CharacterData,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .width(100.dp)
@@ -118,8 +167,9 @@ fun CharacterCarouselCard(character: CharacterData, isSelected: Boolean, onClick
             modifier = Modifier.fillMaxSize(),
             emojiSize = 52.sp
         )
+
         Text(
-            character.name.uppercase(),
+            text = character.name.uppercase(),
             color = if (isSelected) Gold else TextSecondary,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
@@ -132,7 +182,10 @@ fun CharacterCarouselCard(character: CharacterData, isSelected: Boolean, onClick
 }
 
 @Composable
-fun CharacterDetailPanel(character: CharacterData, onSelect: () -> Unit) {
+fun CharacterDetailPanel(
+    character: CharacterData,
+    onSelect: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -144,21 +197,42 @@ fun CharacterDetailPanel(character: CharacterData, onSelect: () -> Unit) {
             verticalAlignment = Alignment.Top
         ) {
             Column {
-                Text(character.name, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Normal)
                 Text(
-                    "${character.location} · ${character.specialty}",
+                    text = character.name,
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Normal
+                )
+                Text(
+                    text = "${character.location} · ${character.specialty}",
                     color = TextSecondary,
                     fontSize = 12.sp
                 )
             }
+
             Column(horizontalAlignment = Alignment.End) {
-                Text("SPEZIALITÄT", color = TextSecondary, fontSize = 9.sp, letterSpacing = 1.sp)
-                Text(character.specialty, color = TextSecondary, fontSize = 11.sp)
+                Text(
+                    text = "SPEZIALITÄT",
+                    color = TextSecondary,
+                    fontSize = 9.sp,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = character.specialty,
+                    color = TextSecondary,
+                    fontSize = 11.sp
+                )
             }
         }
 
         Spacer(Modifier.height(8.dp))
-        Text(character.quote, color = TextSecondary, fontSize = 12.sp, fontStyle = FontStyle.Italic)
+
+        Text(
+            text = character.quote,
+            color = TextSecondary,
+            fontSize = 12.sp,
+            fontStyle = FontStyle.Italic
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -178,7 +252,11 @@ fun CharacterDetailPanel(character: CharacterData, onSelect: () -> Unit) {
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold),
             contentPadding = PaddingValues(vertical = 14.dp)
         ) {
-            Text("${character.name.uppercase()} WÄHLEN →", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text(
+                text = "${character.name.uppercase()} WÄHLEN →",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
@@ -186,7 +264,14 @@ fun CharacterDetailPanel(character: CharacterData, onSelect: () -> Unit) {
 @Composable
 fun StatBar(label: String, value: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = TextSecondary, fontSize = 10.sp, modifier = Modifier.width(72.dp), letterSpacing = 1.sp)
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 10.sp,
+            modifier = Modifier.width(72.dp),
+            letterSpacing = 1.sp
+        )
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -202,7 +287,15 @@ fun StatBar(label: String, value: Int) {
                     .background(Gold)
             )
         }
+
         Spacer(Modifier.width(10.dp))
-        Text("$value", color = Gold, fontSize = 12.sp, modifier = Modifier.width(28.dp), textAlign = TextAlign.End)
+
+        Text(
+            text = "$value",
+            color = Gold,
+            fontSize = 12.sp,
+            modifier = Modifier.width(28.dp),
+            textAlign = TextAlign.End
+        )
     }
 }

@@ -2,6 +2,10 @@ package com.example.fellowshiprunner.model.characters
 
 import androidx.compose.ui.graphics.Color
 
+
+// neuer import fuer models
+import com.example.fellowshiprunner.R
+
 data class CharacterData(
     val name: String,
     val visuals: CharacterVisuals,
@@ -17,12 +21,15 @@ data class CharacterData(
 
 data class ActivityLogEntry(val characterName: String, val activity: String)
 
+// hab die artworks eingefuegt + die emojis geaendert
+// werte sollten eigentlich passen
 val fellowshipMembers = listOf(
     CharacterData(
         name = "Frodo",
         visuals = CharacterVisuals(
-            emoji = "🧙",
-            cardColors = listOf(Color(0xFF4A2010), Color(0xFF1A0B05))
+            emoji = "🥾", // ausdauer
+            cardColors = listOf(Color(0xFF4A2010), Color(0xFF1A0B05)),
+            portraitRes = R.drawable.frodo
         ),
         location = "Auenland",
         specialty = "Joggen",
@@ -33,8 +40,9 @@ val fellowshipMembers = listOf(
     CharacterData(
         name = "Sam",
         visuals = CharacterVisuals(
-            emoji = "🌿",
-            cardColors = listOf(Color(0xFF1E3820), Color(0xFF0A1A10))
+            emoji = "🍲", // energie
+            cardColors = listOf(Color(0xFF1E3820), Color(0xFF0A1A10)),
+            portraitRes = R.drawable.sam
         ),
         location = "Auenland",
         specialty = "Alle Sportarten",
@@ -45,8 +53,9 @@ val fellowshipMembers = listOf(
     CharacterData(
         name = "Gimli",
         visuals = CharacterVisuals(
-            emoji = "⚒️",
-            cardColors = listOf(Color(0xFF252038), Color(0xFF0F0F1E))
+            emoji = "🏋️", // kraft
+            cardColors = listOf(Color(0xFF252038), Color(0xFF0F0F1E)),
+            portraitRes = R.drawable.gimli
         ),
         location = "Erebor",
         specialty = "Gewichte",
@@ -57,8 +66,9 @@ val fellowshipMembers = listOf(
     CharacterData(
         name = "Legolas",
         visuals = CharacterVisuals(
-            emoji = "🏹",
-            cardColors = listOf(Color(0xFF1A3828), Color(0xFF0A1A10))
+            emoji = "🏃", // geschwindigkeit
+            cardColors = listOf(Color(0xFF1A3828), Color(0xFF0A1A10)),
+            portraitRes = R.drawable.legolas
         ),
         location = "Mirkwood",
         specialty = "Laufen",
