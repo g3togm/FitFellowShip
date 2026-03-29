@@ -2,6 +2,7 @@ package com.example.fellowshiprunner.model.characters
 
 import androidx.compose.ui.graphics.Color
 
+
 // neuer import fuer models
 import com.example.fellowshiprunner.R
 

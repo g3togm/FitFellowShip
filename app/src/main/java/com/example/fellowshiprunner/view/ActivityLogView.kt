@@ -4,11 +4,29 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,10 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fellowshiprunner.model.characters.CharacterData
 import com.example.fellowshiprunner.rememberSoundManager
-import com.example.fellowshiprunner.view.components.AppBackground
-import com.example.fellowshiprunner.view.components.CharacterPortrait
 import com.example.fellowshiprunner.ui.theme.Gold
 import com.example.fellowshiprunner.ui.theme.TextSecondary
+import com.example.fellowshiprunner.view.components.AppBackground
+import com.example.fellowshiprunner.view.components.CharacterPortrait
 
 @Composable
 fun ActivityLogView(
@@ -30,7 +48,8 @@ fun ActivityLogView(
     onBack: () -> Unit
 ) {
     var selectedActivity by remember { mutableStateOf<String?>(null) }
-    // Gets the shared instance from CompositionLocal — no new SoundManager created
+    var isSubmitting by remember { mutableStateOf(false) }
+
     val sound = rememberSoundManager()
 
     val activities = listOf(
@@ -43,34 +62,39 @@ fun ActivityLogView(
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
-                // FIX: navigationBarsPadding() pushes buttons above the gesture area
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFF0D0A08))
-                        .navigationBarsPadding()          // ← the key fix
+                        .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = onBack,
+                        onClick = {
+                            if (!isSubmitting) onBack()
+                        },
                         modifier = Modifier.weight(1f),
+                        enabled = !isSubmitting,
                         shape = RoundedCornerShape(8.dp),
                         border = BorderStroke(1.dp, Color.DarkGray.copy(alpha = 0.5f)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
                     ) {
                         Text("Abbrechen")
                     }
+
                     Button(
                         onClick = {
-                            selectedActivity?.let { activity ->
-                                // Play one of the two Sauron lines randomly
-                                sound.playSauronVoice()
-                                onConfirm(activity)
-                            }
+                            val activity = selectedActivity ?: return@Button
+                            if (isSubmitting) return@Button
+
+                            isSubmitting = true
+                            sound.playWorkoutLogged()
+                            sound.playSauronVoice()
+                            onConfirm(activity)
                         },
                         modifier = Modifier.weight(2f),
-                        enabled = selectedActivity != null,
+                        enabled = selectedActivity != null && !isSubmitting,
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Gold,
@@ -78,7 +102,10 @@ fun ActivityLogView(
                             disabledContainerColor = Gold.copy(alpha = 0.3f)
                         )
                     ) {
-                        Text("Eintragen ✓", fontWeight = FontWeight.Medium)
+                        Text(
+                            if (isSubmitting) "Wird eingetragen..." else "Eintragen ✓",
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
@@ -101,15 +128,24 @@ fun ActivityLogView(
                     )
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text(character.name, color = Gold, fontSize = 20.sp, fontWeight = FontWeight.Normal)
-                        Text("Von Mittelerde", color = TextSecondary, fontSize = 12.sp)
+                        Text(
+                            text = character.name,
+                            color = Gold,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        Text(
+                            text = "Von Mittelerde",
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
                     }
                 }
 
                 Spacer(Modifier.height(32.dp))
 
                 Text(
-                    "Was hast du heute vollbracht?",
+                    text = "Was hast du heute vollbracht?",
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Light
@@ -119,6 +155,7 @@ fun ActivityLogView(
 
                 activities.forEach { (emoji, name) ->
                     val isSelected = selectedActivity == name
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -128,18 +165,25 @@ fun ActivityLogView(
                                 else Color(0xFF1A120B).copy(alpha = 0.8f)
                             )
                             .border(
-                                1.dp,
-                                if (isSelected) Gold else Color.DarkGray.copy(alpha = 0.3f),
-                                RoundedCornerShape(10.dp)
+                                width = 1.dp,
+                                color = if (isSelected) Gold else Color.DarkGray.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(10.dp)
                             )
-                            .clickable { selectedActivity = name }
+                            .clickable(enabled = !isSubmitting) {
+                                selectedActivity = name
+                            }
                             .padding(horizontal = 16.dp, vertical = 18.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(emoji, fontSize = 24.sp)
+                        Text(text = emoji, fontSize = 24.sp)
                         Spacer(Modifier.width(16.dp))
-                        Text(name, color = if (isSelected) Gold else Color.White, fontSize = 16.sp)
+                        Text(
+                            text = name,
+                            color = if (isSelected) Gold else Color.White,
+                            fontSize = 16.sp
+                        )
                     }
+
                     Spacer(Modifier.height(10.dp))
                 }
             }
