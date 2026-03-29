@@ -36,13 +36,12 @@ import com.example.fellowshiprunner.ui.theme.TextSecondary
 @Composable
 fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
     var selectedIndex by remember { mutableStateOf(0) }
-    val selected = fellowshipMembers[selectedIndex]
-    val sound = rememberSoundManager()
+    // Safe fallback in case index is somehow stale
+    val selected = fellowshipMembers.getOrElse(selectedIndex) { fellowshipMembers[0] }
 
-    // Start ambient music when screen opens
-    LaunchedEffect(Unit) {
-        sound.startAmbient(volume = 0.2f)
-    }
+    // Uses the shared instance from CompositionLocal — does NOT create a new one,
+    // so no MediaPlayer is started or killed when this screen composes/disposes.
+    val sound = rememberSoundManager()
 
     AppBackground(gradientHeightFraction = 0.55f) {
         Scaffold(
@@ -58,7 +57,6 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
             ) {
                 TopBarActions()
 
-                // Animated eye — safe on character select screen
                 EyeOfSauronBadge(threatLevel = 0f)
 
                 Spacer(Modifier.height(12.dp))
@@ -91,7 +89,6 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
                             isSelected = index == selectedIndex,
                             onClick = {
                                 selectedIndex = index
-                                // 🔊 Play voiceline when tapping a character
                                 sound.playVoiceline(character.name.lowercase())
                             }
                         )
@@ -102,7 +99,11 @@ fun CharacterSelectionView(onCharacterSelected: (Int) -> Unit) {
 
                 CharacterDetailPanel(
                     character = selected,
-                    onSelect = { onCharacterSelected(selectedIndex) }
+                    onSelect = {
+                        if (selectedIndex in fellowshipMembers.indices) {
+                            onCharacterSelected(selectedIndex)
+                        }
+                    }
                 )
 
                 Spacer(Modifier.height(24.dp))

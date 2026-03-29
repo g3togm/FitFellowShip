@@ -1,32 +1,20 @@
 package com.example.fellowshiprunner.view.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-
-// fuer vulkan-background
 import com.example.fellowshiprunner.R
 
 /**
- * Full-screen dark background.
- *
- * Currently uses a volcanic radial gradient overlay.
- * To switch to a real background image: set [imageRes] and the
- * gradient fallback becomes unused and can be removed.
- *
- * [gradientHeightFraction] controls how far down the gradient extends (0f–1f).
+ * Full-screen dark background with the Mordor image and a darkening overlay.
+ * No changes needed here — the button/nav fix is handled by Scaffold innerPadding in MainView.
  */
 @Composable
 fun AppBackground(

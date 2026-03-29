@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fellowshiprunner.model.characters.CharacterData
+import com.example.fellowshiprunner.rememberSoundManager
 import com.example.fellowshiprunner.view.components.AppBackground
 import com.example.fellowshiprunner.view.components.CharacterPortrait
 import com.example.fellowshiprunner.ui.theme.Gold
@@ -29,6 +30,8 @@ fun ActivityLogView(
     onBack: () -> Unit
 ) {
     var selectedActivity by remember { mutableStateOf<String?>(null) }
+    // Gets the shared instance from CompositionLocal — no new SoundManager created
+    val sound = rememberSoundManager()
 
     val activities = listOf(
         "🏃" to "Joggen",
@@ -40,10 +43,12 @@ fun ActivityLogView(
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
+                // FIX: navigationBarsPadding() pushes buttons above the gesture area
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFF0D0A08))
+                        .navigationBarsPadding()          // ← the key fix
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -57,7 +62,13 @@ fun ActivityLogView(
                         Text("Abbrechen")
                     }
                     Button(
-                        onClick = { selectedActivity?.let { onConfirm(it) } },
+                        onClick = {
+                            selectedActivity?.let { activity ->
+                                // Play one of the two Sauron lines randomly
+                                sound.playSauronVoice()
+                                onConfirm(activity)
+                            }
+                        },
                         modifier = Modifier.weight(2f),
                         enabled = selectedActivity != null,
                         shape = RoundedCornerShape(8.dp),

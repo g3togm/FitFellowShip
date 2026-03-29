@@ -22,16 +22,31 @@ class FellowshipController(application: Application) : AndroidViewModel(applicat
 
     // ── App state ─────────────────────────────────────────────────────────────
 
-    var playerCharIndex by mutableStateOf(repository.loadPlayerCharIndex())
+    // Clamp saved index so it's always valid even if fellowshipMembers shrinks
+    var playerCharIndex by mutableStateOf(
+        repository.loadPlayerCharIndex().coerceIn(0, fellowshipMembers.lastIndex)
+    )
         private set
 
-    val activityCounts = mutableStateListOf(*repository.loadActivityCounts().toTypedArray())
+    // FIX: Always ensure activityCounts has exactly one entry per fellowship member.
+    // If the saved list is shorter (e.g. new member added, fresh install, corrupted save),
+    // pad with zeros. If longer, truncate. This is the most common crash source.
+    val activityCounts = mutableStateListOf(
+        *buildList {
+            val saved = repository.loadActivityCounts()
+            fellowshipMembers.forEachIndexed { i, _ ->
+                add(saved.getOrElse(i) { 0 })
+            }
+        }.toTypedArray()
+    )
 
     val logEntries = mutableStateListOf(*repository.loadLogEntries().toTypedArray())
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
     fun selectCharacter(index: Int) {
+        // Guard: only accept valid indices
+        if (index !in fellowshipMembers.indices) return
         playerCharIndex = index
         screen = Screen.Main
         repository.savePlayerCharIndex(index)
@@ -46,10 +61,18 @@ class FellowshipController(application: Application) : AndroidViewModel(applicat
     }
 
     fun logActivity(activity: String) {
-        val goal = fellowshipMembers[playerCharIndex].weeklyGoal
-        activityCounts[playerCharIndex] =
-            (activityCounts[playerCharIndex] + 1).coerceAtMost(goal)
-        logEntries.add(0, ActivityLogEntry(fellowshipMembers[playerCharIndex].name, activity))
+        // Guard: ensure index is valid before touching activityCounts
+        val safeIndex = playerCharIndex.coerceIn(0, fellowshipMembers.lastIndex)
+        if (safeIndex >= activityCounts.size) return
+
+        val goal = fellowshipMembers[safeIndex].weeklyGoal
+        activityCounts[safeIndex] = (activityCounts[safeIndex] + 1).coerceAtMost(goal)
+
+        logEntries.add(
+            index = 0,
+            element = ActivityLogEntry(fellowshipMembers[safeIndex].name, activity)
+        )
+
         screen = Screen.Main
         repository.saveActivityCounts(activityCounts.toList())
         repository.saveLogEntries(logEntries.toList())

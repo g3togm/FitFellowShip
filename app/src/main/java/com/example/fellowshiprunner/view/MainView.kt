@@ -47,6 +47,8 @@ fun MainView(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    // FIX: Use innerPadding properly so content respects both
+                    // the bottom nav bar AND the system gesture area
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -71,7 +73,8 @@ fun MainView(
 
                 Spacer(Modifier.height(24.dp))
 
-                EyeOfSauronBadge(size = 72.dp)
+                // FIX: Large eye (180dp) with burning effect, same as character screen
+                EyeOfSauronBadge(size = 180.dp, threatLevel = 0.75f)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "Der Ring muss zerstört werden",
@@ -108,7 +111,9 @@ fun MainView(
                         .padding(8.dp)
                 )
 
-                Spacer(Modifier.height(24.dp))
+                // FIX: Extra padding at the bottom so the last item never sits
+                // behind the gesture navigation bar on phones without buttons
+                Spacer(Modifier.height(32.dp))
             }
         }
     }
@@ -226,7 +231,7 @@ fun FellowshipGrid(
                     val index = fellowshipMembers.indexOf(character)
                     FellowshipCard(
                         character = character,
-                        completed = activityCounts[index],
+                        completed = activityCounts.getOrElse(index) { 0 },
                         isPlayer = playerCharIndex == index,
                         modifier = Modifier.weight(1f),
                         onLogActivity = onLogActivity
@@ -304,6 +309,9 @@ fun FellowshipCard(
             Spacer(Modifier.height(8.dp))
 
             if (isPlayer) {
+                // FIX: Button is inside a Card which is inside a scrollable Column,
+                // so it's always reachable — no longer clipped by gesture nav.
+                // The Column's innerPadding (from Scaffold) handles the safe area.
                 OutlinedButton(
                     onClick = onLogActivity,
                     modifier = Modifier.fillMaxWidth(),

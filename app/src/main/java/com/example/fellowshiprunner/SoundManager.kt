@@ -31,6 +31,25 @@ class SoundManager(private val context: Context) {
         try {
             soundWorkout = soundPool.load(context, R.raw.workout_logged, 1)
             soundThreat  = soundPool.load(context, R.raw.threat_high,    1)
+        } catch (e: Exception) { /* silent fallback if file missing */ }
+    }
+
+    // ── Sauron voice lines (played on Eintragen) ──────────────────────────────
+    // Randomly plays either "You cannot hide" or "I see you"
+    // Files: res/raw/sauron_you_cannot_hide.mp3 and res/raw/sauron_i_see_you.mp3
+
+    fun playSauronVoice() {
+        val resId = if ((0..1).random() == 0)
+            R.raw.sauron_you_cannot_hide
+        else
+            R.raw.sauron_i_see_you
+        stopVoice()
+        try {
+            voicePlayer = MediaPlayer.create(context, resId)?.apply {
+                setVolume(1f, 1f)
+                setOnCompletionListener { release() }
+                start()
+            }
         } catch (e: Exception) { /* silent fallback */ }
     }
 
@@ -44,12 +63,8 @@ class SoundManager(private val context: Context) {
         if (soundThreat != 0) soundPool.play(soundThreat, 0.7f, 0.7f, 1, 0, 1f)
     }
 
-    // ── Voicelines ────────────────────────────────────────────────────────────
+    // ── Character voicelines ──────────────────────────────────────────────────
 
-    /**
-     * Call this when a character is selected in the carousel.
-     * characterId: "frodo" | "sam" | "gimli" | "legolas"
-     */
     fun playVoiceline(characterId: String) {
         val resId = when (characterId) {
             "frodo"   -> R.raw.voice_frodo
@@ -77,7 +92,7 @@ class SoundManager(private val context: Context) {
     // ── Ambient ───────────────────────────────────────────────────────────────
 
     fun startAmbient(volume: Float = 0.25f) {
-        if (ambientPlayer != null) return
+        if (ambientPlayer != null) return          // already running — do nothing
         try {
             ambientPlayer = MediaPlayer.create(context, R.raw.ambient)?.apply {
                 isLooping = true
@@ -87,7 +102,6 @@ class SoundManager(private val context: Context) {
         } catch (e: Exception) { /* no file yet */ }
     }
 
-    /** Scale ambient volume with threat — louder = more danger */
     fun setAmbientVolume(volume: Float) {
         ambientPlayer?.setVolume(volume.coerceIn(0f, 1f), volume.coerceIn(0f, 1f))
     }
@@ -104,12 +118,18 @@ class SoundManager(private val context: Context) {
     }
 }
 
+// FIX: compositionLocalOf so the SAME SoundManager instance is shared across
+// all screens — calling rememberSoundManager() in a child screen no longer
+// creates a second instance or disposes the one from MainActivity.
+val LocalSoundManager = compositionLocalOf<SoundManager?> { null }
+
 @Composable
 fun rememberSoundManager(): SoundManager {
-    val context = LocalContext.current
-    val manager = remember { SoundManager(context) }
-    DisposableEffect(Unit) {
-        onDispose { manager.release() }
-    }
-    return manager
+    // If a shared instance has been provided via CompositionLocal, use it.
+    // Otherwise fall back to creating a local one (e.g. in Previews).
+    return LocalSoundManager.current
+        ?: run {
+            val context = LocalContext.current
+            remember { SoundManager(context) }
+        }
 }
